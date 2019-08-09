@@ -1,0 +1,18 @@
+[package]
+name = "formatf"
+version = "0.1.0"
+authors = ["Mikail Bagishov <bagishov.mikail@yandex.ru>"]
+edition = "2018"
+description = "C-style formatting"
+
+[features]
+alloc = []
+std = ["alloc"]
+default = ["std"]
+
+[dev-dependencies]
+pretty_assertions = "0.6.1"
+
+[dependencies]
+itoa = {version = "0.4.4", default-features = false, features = ["i128"]}
+
