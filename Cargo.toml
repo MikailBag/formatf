@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Mikail Bagishov <bagishov.mikail@yandex.ru>"]
 edition = "2018"
 description = "C-style formatting"
+license = "MIT OR Apache-2.0"
 
 [features]
 alloc = []
