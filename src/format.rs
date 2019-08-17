@@ -72,7 +72,7 @@ impl<'a, H: Handler> Formatter<'a, H> {
             0
         };
 
-        let pad_char = b' ';
+        let pad_char = if spec.flags.pad_zero { b'0' } else { b' ' };
 
         if !spec.flags.adj_left {
             if !self.write_padding(pad_char, padding_size) {

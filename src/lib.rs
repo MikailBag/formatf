@@ -187,4 +187,24 @@ mod tests {
             assert_eq!(res, b"loop");
         }
     }
+
+    #[test]
+    fn padding_simple_int() {
+        let args_small = [Value::Int(42)];
+        let args_big = [Value::Int(1234)];
+        {
+            let fmt = b"%03d";
+            let res = format(fmt, &args_small).unwrap();
+            assert_eq!(res, b"042");
+            let res = format(fmt, &args_big).unwrap();
+            assert_eq!(res, b"1234");
+        }
+        {
+            let fmt = b"%3d";
+            let res = format(fmt, &args_small).unwrap();
+            assert_eq!(res, b" 42");
+            let res = format(fmt, &args_big).unwrap();
+            assert_eq!(res, b"1234");
+        }
+    }
 }

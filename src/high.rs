@@ -118,7 +118,7 @@ impl LenModifier {
         use LenModifier::*;
         match b {
             b"l" => Ok(Long),
-            b"ll" | b"L" => Ok(Longer),
+            b"ll" => Ok(Longer),
             b"j" => Ok(Longest),
             b"h" => Ok(Short),
             b"hh" => Ok(Shorter),
