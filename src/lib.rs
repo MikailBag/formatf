@@ -1,7 +1,7 @@
 //! `formatf` allows you to format strings at runtime
 //!
 //! # Features
-//! - format!()-like functionality - create new String with rendered template (requires `alloc` feature)
+//! - format!()-like functionality - create new VEC with rendered template (requires `alloc` feature)
 //! - write!()-like functionality - write template to custom callback or `std::io::Write` implementation (latter requires `std` feature)
 //! - no_std / alloc-only support
 //! - does not depend on any C libraries
@@ -18,7 +18,7 @@ extern crate alloc;
 #[macro_use]
 extern crate pretty_assertions;
 
-use crate::format::FormatError;
+use crate::format::FormatToError;
 
 mod format;
 pub mod high;
@@ -35,17 +35,17 @@ pub enum Value<'a> {
 /// [`format`]: ./fn.format.html
 #[cfg(feature = "alloc")]
 #[derive(Debug)]
-pub struct FormatFnError(FormatError<core::convert::Infallible>, Vec<u8>);
+pub struct FormatFnError(FormatToError<core::convert::Infallible>, Vec<u8>);
 
 #[cfg(feature = "alloc")]
 impl FormatFnError {
     /// Returns reference to underying error
-    pub fn error(&self) -> &FormatError<core::convert::Infallible> {
+    pub fn error(&self) -> &FormatToError<core::convert::Infallible> {
         &self.0
     }
 
     /// Returns underlying error
-    pub fn into_error(self) -> FormatError<core::convert::Infallible> {
+    pub fn into_error(self) -> FormatToError<core::convert::Infallible> {
         self.0
     }
 
@@ -104,7 +104,7 @@ pub fn format_to<H: BinSink>(
     template: &[u8],
     args: &[Value],
     sink: &mut H,
-) -> Result<(), FormatError<H::Err>> {
+) -> Result<(), FormatToError<H::Err>> {
     let mut fmt = format::Formatter {
         sink,
         args,
