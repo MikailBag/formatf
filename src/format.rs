@@ -1,13 +1,13 @@
 use crate::{
     high::{ConvKind, LenModifier, ParseError, ParsedConversionSpecification},
     visit::{ConversionSpecification, FormatStringVisitor},
-    Handler, Value,
+    BinSink, Value,
 };
 
 #[derive(Debug)]
 pub enum FormatError<E> {
-    /// Handler returned error.
-    Handler(E),
+    /// `BinSink` returned error.
+    Sink(E),
     /// Conversion specifier parse error.
     Spec(ParseError),
     /// Too many arguments.
@@ -28,25 +28,59 @@ pub enum FormatError<E> {
     NumOverflow,
 }
 
+impl<E> FormatError<E> {
+    pub fn description(&self) -> &'static str {
+        match self {
+            FormatError::Sink(_) => "sink error",
+            FormatError::Spec(_) => "invalid conversion specifier",
+            FormatError::ExcessArgs => "format string did not use all given args",
+            FormatError::NotEnoughArguments => {
+                "format string requested arguments that were not provided"
+            }
+            FormatError::Unsupported => "this feature is not implemented yet",
+            FormatError::BadType => "argument type not compatible with conversion specifier",
+            FormatError::Invalid => "invalid format string",
+            FormatError::NumOverflow => "numeric overflow",
+        }
+    }
+}
+
+impl<E: core::fmt::Display> core::fmt::Display for FormatError<E> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        std::fmt::Display::fmt(self.description(), f)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<E: std::error::Error + 'static> std::error::Error for FormatError<E> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            FormatError::Sink(inner) => Some(inner),
+            FormatError::Spec(inner) => Some(inner),
+            _ => None,
+        }
+    }
+}
+
 /// Formatter actually implements formatting
-pub(crate) struct Formatter<'a, H: Handler> {
-    pub(crate) handler: &'a mut H,
+pub(crate) struct Formatter<'a, H: BinSink> {
+    pub(crate) sink: &'a mut H,
     pub(crate) args: &'a [Value<'a>],
     pub(crate) error: Option<FormatError<H::Err>>,
     pub(crate) next_arg: usize,
 }
 
-impl<'a, H: Handler> Formatter<'a, H> {
+impl<'a, H: BinSink> Formatter<'a, H> {
     fn had_error(&self) -> bool {
         self.error.is_some()
     }
 
     #[must_use]
     fn call_handler(&mut self, b: &[u8]) -> bool {
-        match self.handler.handle(b) {
+        match self.sink.put(b) {
             Ok(()) => true,
             Err(e) => {
-                self.error = Some(FormatError::Handler(e));
+                self.error = Some(FormatError::Sink(e));
                 false
             }
         }
@@ -163,13 +197,13 @@ impl<'a, H: Handler> Formatter<'a, H> {
     }
 }
 
-impl<'a, H: Handler> FormatStringVisitor for Formatter<'a, H> {
+impl<'a, H: BinSink> FormatStringVisitor for Formatter<'a, H> {
     fn visit_bytes(&mut self, b: &[u8]) {
         if self.had_error() {
             return;
         }
-        if let Err(e) = self.handler.handle(b) {
-            self.error = Some(FormatError::Handler(e));
+        if let Err(e) = self.sink.put(b) {
+            self.error = Some(FormatError::Sink(e));
         }
     }
 

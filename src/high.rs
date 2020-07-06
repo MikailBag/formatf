@@ -15,10 +15,45 @@ pub enum ParseError {
     UnknownFlag(u8),
     DuplicateFlag(u8),
     /// Precision is invalid
-    InvalidPrec(Option<std::num::ParseIntError>),
-    InvalidWidth(Option<std::num::ParseIntError>),
+    InvalidPrec(Option<core::num::ParseIntError>),
+    InvalidWidth(Option<core::num::ParseIntError>),
     UnknownLenModifier,
     Unsupported,
+}
+
+impl ParseError {
+    pub fn description(&self) -> &'static str {
+        match self {
+            ParseError::MissingSpecifier => "conversion specifier missing",
+            ParseError::UnknownSpecifier => "unknown conversion specifier",
+            ParseError::UnknownFlag(_) => "conversion specifier contains unknown flag",
+            ParseError::DuplicateFlag(_) => "conversion specifier contains duplicated flag",
+            ParseError::InvalidPrec(_) => "conversion specifier contains invalid precision",
+            ParseError::InvalidWidth(_) => "conversion specifier contains invalid width",
+            ParseError::UnknownLenModifier => {
+                "conversion specifier contains unknown length modifier"
+            }
+            ParseError::Unsupported => "this feature is not supported",
+        }
+    }
+}
+
+impl core::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::Display::fmt(self.description(), f)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ParseError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ParseError::InvalidPrec(inner) | ParseError::InvalidWidth(inner) => inner
+                .as_ref()
+                .map(|x| x as &(dyn std::error::Error + 'static)),
+            _ => None,
+        }
+    }
 }
 
 impl ParsedConversionSpecification {
